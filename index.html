@@ -70,6 +70,30 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,340px) 
 }
 @media (max-width:820px) and (orientation:portrait){:root{--chart:1.9rem}}
 @media (prefers-reduced-motion:no-preference){.row .open{transition:background .12s}}
+
+.hbtn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 16px;font-weight:500}
+.hbtn .dot{color:var(--orange)}
+.panel{max-width:760px;display:flex;flex-direction:column;gap:14px}
+.panel h2{margin:6px 0 0;font-size:1.5rem;color:var(--pink)}
+.panel p{margin:0;color:var(--muted);line-height:1.45}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{color:var(--muted);font-size:.9rem;font-weight:500}
+.in{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:1.1rem}
+textarea.in{min-height:9rem;font-size:.9rem;font-family:ui-monospace,Menlo,monospace}
+.eline{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;background:var(--panel)}
+.seg-row{display:flex;gap:8px;align-items:center}
+.seg-row .in{flex:1;min-width:0;background:var(--bg)}
+.sw{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid var(--line);padding:0}
+.sw.t{background:var(--teal)}.sw.w{background:var(--white)}.sw.o{background:var(--orange)}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tools button,.panel button.sm{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:500}
+.panel button.primary{background:var(--pink);border-color:var(--pink);color:#000;font-weight:700}
+.panel button.danger[data-armed]{border-color:#ff5c5c;color:#ff5c5c}
+.msg{color:var(--teal);min-height:1.2em}
+.warn{color:var(--orange)}
+.pv{border-top:1px solid var(--line);padding-top:14px;margin-top:6px}
+.pv .line{font-size:1.6rem}
+.pv .head{font-size:1.7rem}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 [hidden]{display:none!important}
 </style>
@@ -83,6 +107,8 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,340px) 
     <button id="m-all" type="button" aria-pressed="true">All <span id="n-all"></span></button>
     <button id="m-set" type="button" aria-pressed="false">Set <span id="n-set"></span></button>
   </div>
+  <button id="b-new" class="hbtn" type="button">New</button>
+  <button id="b-bak" class="hbtn" type="button">Backup</button>
 </header>
 <main>
   <nav id="list" aria-label="Songs"></nav>
@@ -90,60 +116,68 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(260px,340px) 
 </main>
 
 <script>
-const SONGS = [{"title":"500 Miles","key":"(D)","lines":[[["t","1\t1\t4\t5 "]],[["o","Verse 6 goes to the "],["t","6"]]]},{"title":"Black Horse","key":"(G/Em)","lines":[[["t","6\t6\t3\t6 "]],[["w","6\t5\t5\t4"]],[["w","6\t5\t4\t6"]]]},{"title":"Blister in the Sun","key":"(G)","lines":[[["t","1 - 4 - 1 - 4 - 1 - 4 - 1 "]],[["w","6\t4\t6\t4 - 5"]]]},{"title":"Budapest","key":"(F)","lines":[[["t","1\t1\t4\t1\t"]],[["w","5\t4\t1\t1"]]]},{"title":"Crazy","key":"(G)","lines":[[["t","6\t1\t4\t3\t"]],[["w","6\t4\t1\t3"]],[["o","(Switches for first half of V2 & V3)"]]]},{"title":"Crocodile","key":"(G)","lines":[[["t","1\t3\t4\t5"]],[["w","6 "],["t"," "],["o","(open)"],["t","\t"],["w","2"]],[["w","5\t\t1"]],[["w","6 "],["t"," "],["o","(open)"],["t","\t"],["w","2"]],[["w","5\t\t4"]],[["o","1\t6\t4\t5"]]]},{"title":"Moonlight","key":"(Cm)","lines":[[["t","2\t5\t1 - 7\t6"]]]},{"title":"Diamonds Souls","key":"(F)","lines":[[["t","1\t1\t4\t5\t"]]]},{"title":"Dreams","key":"(C)","lines":[[["t","1\t2\t1\t2\t"]]]},{"title":"Drift Away","key":"(A)","lines":[[["t","1\t(2)\t4\t"],["o","x 3"],["t","\t"]],[["t","6\t\t1\t"]],[["w","4\t2\t1  x 2"]],[["o","(Walk down from the 1)"]]]},{"title":"Down Under","key":"(D)","lines":[[["t","6\t5\t6\t4 - 5"]],[["w","1\t5\t6\t4 - 5"]]]},{"title":"Faith","key":"(A)","lines":[[["t","1\t4\t1\t1"]],[["w","4\t1\t4\t1"]],[["w","4\t1 - 6\t2\t5"],["t","\t"]]]},{"title":"Happy","key":"(C)","lines":[[["t","1- 4 - b3 - 4"]],[["w","b5\t 5\tb3\t 1\t"]]]},{"title":"Hey Baby","key":"(G)","lines":[[["t","1\t6\t4\t5"]],[["w","4\t1\t4\t5 "],["o","(dbl)"]],[["o","6\t2\t5\t1"]]]},{"title":"Hey Ya","key":"(G)","lines":[[["t","1\t6\t5\t4  "],["o","x 2"]],[["t","1\t4\t6\t4"]],[["w","1\t4\t1\t1"],["o","-b7-6-5"]],[["o","4\t2\t5\t1"]]]},{"title":"How Sweet","key":"(G)","lines":[[["o","4\t2\t5\t1"]],[["t","1\t6\t5\t4  "],["o","x 2"]],[["t","1\t4\t6\t4"]],[["t","1\t4\t1\t"],["o","1-b7-6-5"]]]},{"title":"Dumb Things","key":"(C)","lines":[[["t","6\t3 - 5  "],["o","6 - 1 - 5 - 2"]],[["w","4\t1\t3\t4 - 5 "]],[["w","6 - 3 - 5 - 1 - 5 - 2 "]]]},{"title":"Drift Away","key":"(?)","lines":[[["t","5\t1  x 3"]],[["t","2\t5"]],[["w","1\t5\t4\t4"]]]},{"title":"Feel it Still","key":"(E)","lines":[[["t","6\t1\t2\t1"]],[["w","4\t2\t6\t6"]]]},{"title":"Grapevine","key":"(Am)","lines":[[["t","1\t1\t5\t4  "],["o","x 2"]],[["t","6\t4\t1\t4"]],[["w","1\t4\t1\t4"]]]},{"title":"Honkey Tonk","key":"(G)","lines":[[["t","1\t1\t4\t4\t"]],[["t","1\t2\t5\t5"]],[["t","1\t1\t4\t4\t"]],[["t","1\t5\t1\t1"]],[["w","1\t5\t1\t1"]]]},{"title":"Horses","key":"(G)","lines":[[["t","1\t5\t6\t4"]],[["t","4 - 5\t4 - 5"]],[["o","(Key: C)"],["t"," "],["w","4\t5\t2\tb7\t"]]]},{"title":"I’m Yours","key":"(A)","lines":[[["t","1\t5\t6\t4"]],[["o","“I’m Yours…” "],["t","2"]]]},{"title":"Island Sun","key":"(G)","lines":[[["t","6\t2\t5\t1"]],[["w","5\t1\t5\t1"]],[["w","4\t2\t5"]]]},{"title":"Kiss","key":"(A)","lines":[[["t","1\t1\t4\t1"]],[["w","5\t4\t5\t4 "],["t"," "],["o","(pause)"]]]},{"title":"La Bamba","key":"(C)","lines":[[["t","1\t5\t4\t(5)"]]]},{"title":"Levitating","key":"(A)","lines":[[["t","6\t3\t2\t2"]]]},{"title":"Lover","key":"(G)","lines":[[["t","1\t4\t"]]]},{"title":"Like a Woman","key":"(E)","lines":[[["t","1\t1\t1\t4 - 1"]],[["t","b7\t1"]],[["w","5"],["t"," "],["o","(hold)"],["t"," "],["w","3\t1  "],["o","end on"],["w"," 6"]],[["o","2\t4\t1\t1"]]]},{"title":"Listen to Music","key":"(A)","lines":[[["t","1\t1\t6 - 5 - 4"]],[["w","6\t4  x 3 "],["o","end on"],["w"," 2-4"]],[["o","Cut out for bridge"]]]},{"title":"Mr Jones","key":"(A)","lines":[[["t","6\t4\t2\t5"]],[["t","6\t4\t5\t5"]],[["w","1\t4\t5\t5"],["t","\t"]],[["o","6\t4\t6\t5"]]]},{"title":"No Diggity","key":"(G)","lines":[[["t","6\t2\t4\t3"]]]},{"title":"Obla Di","key":"(F)","lines":[[["t","1\t5\t5\t1"]],[["t","1\t4\t1 - 5 - 1"]],[["w","1\t5 - 6   1 - 5 - 1"]],[["o","4\t4\t4\t1"]],[["o","4\t4\t1\t5"]]]},{"title":"Only Wanna Be","key":"(F#)","lines":[[["t","1/4\t1/4"]],[["w","2\t4\t1/4\t1/4"]],[["w","2\t5\t1/4\t1/4"],["t","\t"]]]},{"title":"Part Time","key":"(A)","lines":[[["t","2\t6\t5\t5"]],[["w","2\t6\t4\t1\t"],["o","5"]],[["o","Chorus walks on a "],["w","B"]],[["w","2\t4\t1\t1"]]]},{"title":"Perfect","key":"(E)","lines":[[["t","1\t6\t4\t5  "],["o","x 2"]],[["t","1\t6\t4\t1 - 5"]],[["t","1\t6\t4\t5"]],[["w","6\t4\t1\t5"]],[["o","1 - 7 - 6 - 5 - 4 - 5 (TO)"]]]},{"title":"Proud Mary","key":"(B)","lines":[[["o","b7 - 5 - b7 - 5"]],[["o","b7 - 5 - 4 - b3 - 1"]],[["t","1\t1\t5\t6"]]]},{"title":"Save Tonight","key":"(F)","lines":[[["t","6\t4\t1\t5"]]]},{"title":"Scar","key":"(E)","lines":[[["t","1\t5\t6\t4  "],["o","x 4"]],[["t","2\t4 - 5  "],["o","x 2"],["t","\t"]],[["w","1\t5\t6\t4"]]]},{"title":"Scar Tissue","key":"(F)","lines":[[["t","1\t5\t1\t5"]],[["w","6\t6\t5\t6"]]]},{"title":"Shape of You","key":"(F# / Bm)","lines":[[["t","6\t2\t4\t5"]]]},{"title":"Shotgun","key":"(F)","lines":[[["t","1\t4\t6\t5"]]]},{"title":"Shut Up","key":"(A)","lines":[[["w","4\t5\t6\t5"]],[["w","4\t5\t1\t5"]],[["o","3\t4\t6\t5"]],[["o","3\t4\t5\t5"]],[["t","1\t4\t6\t5"]]]},{"title":"Preacher Man","key":"(A)","lines":[[["t","1\t1\t4\t1"]],[["t","5\t"],["o","(hold)"]],[["w","1\t4 - 1\t1\t4 - 1"]],[["w","1\t5\t4"]],[["o","b7\t4\t5\t1"]],[["o","Key Change = Chorus in D"]]]},{"title":"Stacey’s Mom","key":"(C)","lines":[[["t","1\t4\t5\t4"]],[["t","3\t4\t3\t4"]],[["w","4\t1\t5\t6  "],["o","x 2"]],[["w","4\t1\t"],["o","#5"],["w","\t6"]],[["o","3 Step Key Change to "],["w","Eb"],["o"," (WTF!)"]],[["w","4\t1\t5\t6 "]],[["w","4\t1\t3\t3"]]]},{"title":"Stand By Me","key":"(F)","lines":[[["t","1\t6\t4\t5"]]]},{"title":"Steal My Kisses","key":"(G)","lines":[[["t","1\t4\t5\t1"]]]},{"title":"Stuck Middle","key":"(D)","lines":[[["t","1\t1\t4\t1"]],[["w","5\tb7\t4\t1"],["t"," "],["o","(riff)"]],[["t","4\t"],["o","(hold)"],["t","\t1 "],["o","(riff)"]]]},{"title":"Sweet Caroline","key":"(C)","lines":[[["t","5\t"],["o","(intro hold)"]],[["t","1\t4\t1\t5\t"]],[["w","1\t1\t5\t4\t5"]],[["t","1\t4\t4\t5  "],["o"," (x2)"]],[["t","4 - 3 - 2 "],["o","(walk down)"],["t","\t"]]]},{"title":"Alabama","key":"(G)","lines":[[["t","5\t4\t1\t1"]],[["o","V3 has a"],["t"," b7 - 4"]]]},{"title":"Country Roads","key":"(G)","lines":[[["t","1\t6\t5\t4"]],[["w","1\t5\t6\t4"]],[["o","6\t5\t1\t1"]],[["o","4\t1\t5\t5"]],[["o","6\tb7\t4\t1\t5"]]]},{"title":"The Joker","key":"(E)","lines":[[["t","1\t4\t5\t4"]]]},{"title":"River Dreams","key":"(E)","lines":[[["t","1\t1\t4\t5"]],[["w","6 - 5 - 4 - 3 "]],[["w","6 - 5 - 2 - 5"]]]},{"title":"So Easy","key":"(Eb)","lines":[[["t","4\t4\t1\tb2"]],[["w","2 - 5 - 6 - 6 x 3"]],[["w","2 - 5 - 6 - b5 x 3"]]]},{"title":"The Way Feel","key":"(A)","lines":[[["t","1\t1\t1\t1"]],[["t","4\t4\t4\t5"]]]},{"title":"The Weight","key":"(G)","lines":[[["t","1\t3\t4\t1"]],[["w","1\t5/7\t4"]],[["o","1 - 7 - 6 - 5 - 4 (TO)"]]]},{"title":"Thinking Loud","key":"(A)","lines":[[["t","1\t3\t4\t5"]],[["w","2\t5 - 1\t2\t5"]],[["w","2\t5 - 6\t2\t5"]],[["o","6 - 5 - 4 - 3 - 2 - 5 - 1 TO"]]]},{"title":"Tip of Tongue","key":"(E)","lines":[[["t","5\t4\t3\t4"]]]},{"title":"Too Sweet","key":"(G)","lines":[[["t","6\t 7/1    2    3/4 "]],[["t","5 "],["o","(1)"],["t","   3 "],["o","(7)"]],[["w","6\t7\t1\t2\t  "]],[["w","3\t4\t1"],["t"," "],["o","(5)"],["t"," "],["w","3"],["t"," "],["o","(3)"]]]},{"title":"Twist & Shout","key":"(C)","lines":[[["t","1\t4\t5\t5"]],[["o","Ahhh… "],["t","5"]]]},{"title":"Valerie","key":"(C)","lines":[[["t","1\t2\t1\t2"]],[["w","4\t3\t4\t5"]]]},{"title":"Wagon Wheel","key":"(A)","lines":[[["t","1\t5\t6\t4"]],[["t","1\t5\t4\t4"]]]},{"title":"Walk of Life","key":"(E)","lines":[[["o","1\t4\t5\t4"]],[["t","1\t1\t4\t1\t4\t1"]],[["w","1\t5\t1\t4"]],[["w","1\t5\t4\t5"]]]},{"title":"Walking Sunshine","key":"(D)","lines":[[["t","1\t4\t5\t4"]],[["w","5\t4\t5\t4"]]]},{"title":"Watermelon Sug","key":"(C)","lines":[[["t","2\t6\t1\t4"]]]},{"title":"Wonderful World","key":"(A)","lines":[[["t","1\t6\t4\t5"]],[["w","1\t4\t1\t4\t5\t1"]],[["o","5\t1\t5\t1\t"]],[["o","2\t1\t2\t5"],["t","\t"]]]},{"title":"What I Like","key":"(C)","lines":[[["t","1\t4\tb7\t4"]]]},{"title":"Wonderballs","key":"(A)","lines":[[["t","6\t1\t5\t2"]],[["w","4\t5\t6\t6  "],["o","x 2"]],[["w","4\t5\t6 - 5 - 1 - 5 - 2"]],[["o","4\t6\t1\t6"]]]},{"title":"YMCA","key":"(F)","lines":[[["t","1\t6\t4\t"],["o","5-4-5-4-1-4"]],[["t","1\t6\t4\t"],["o","5-4-3-2-1-4"]],[["w","1\t6\t2\t4"]]]},{"title":"You May Be Right","key":"(A)","lines":[[["t","1\t1\t1\t6  "],["o","x 2"]],[["t","2\tb7\t5\t1"]],[["w","5 "],["o","(riff)"],["w","\t1 "],["o","(riff)"]],[["w","5\t4\t6\t1"]],[["w","5 "],["o","(riff)"],["w","\t1 "],["o","(riff)"]],[["w","4\t5\t1\t1"]]]}];
+const BASE = [{"title":"500 Miles","key":"(D)","lines":[[["t","1\t1\t4\t5 "]],[["o","Verse 6 goes to the "],["t","6"]]]},{"title":"Black Horse","key":"(G/Em)","lines":[[["t","6\t6\t3\t6 "]],[["w","6\t5\t5\t4"]],[["w","6\t5\t4\t6"]]]},{"title":"Blister in the Sun","key":"(G)","lines":[[["t","1 - 4 - 1 - 4 - 1 - 4 - 1 "]],[["w","6\t4\t6\t4 - 5"]]]},{"title":"Budapest","key":"(F)","lines":[[["t","1\t1\t4\t1\t"]],[["w","5\t4\t1\t1"]]]},{"title":"Crazy","key":"(G)","lines":[[["t","6\t1\t4\t3\t"]],[["w","6\t4\t1\t3"]],[["o","(Switches for first half of V2 & V3)"]]]},{"title":"Crocodile","key":"(G)","lines":[[["t","1\t3\t4\t5"]],[["w","6 "],["t"," "],["o","(open)"],["t","\t"],["w","2"]],[["w","5\t\t1"]],[["w","6 "],["t"," "],["o","(open)"],["t","\t"],["w","2"]],[["w","5\t\t4"]],[["o","1\t6\t4\t5"]]]},{"title":"Moonlight","key":"(Cm)","lines":[[["t","2\t5\t1 - 7\t6"]]]},{"title":"Diamonds Souls","key":"(F)","lines":[[["t","1\t1\t4\t5\t"]]]},{"title":"Dreams","key":"(C)","lines":[[["t","1\t2\t1\t2\t"]]]},{"title":"Drift Away","key":"(A)","lines":[[["t","1\t(2)\t4\t"],["o","x 3"],["t","\t"]],[["t","6\t\t1\t"]],[["w","4\t2\t1  x 2"]],[["o","(Walk down from the 1)"]]]},{"title":"Down Under","key":"(D)","lines":[[["t","6\t5\t6\t4 - 5"]],[["w","1\t5\t6\t4 - 5"]]]},{"title":"Faith","key":"(A)","lines":[[["t","1\t4\t1\t1"]],[["w","4\t1\t4\t1"]],[["w","4\t1 - 6\t2\t5"],["t","\t"]]]},{"title":"Happy","key":"(C)","lines":[[["t","1- 4 - b3 - 4"]],[["w","b5\t 5\tb3\t 1\t"]]]},{"title":"Hey Baby","key":"(G)","lines":[[["t","1\t6\t4\t5"]],[["w","4\t1\t4\t5 "],["o","(dbl)"]],[["o","6\t2\t5\t1"]]]},{"title":"Hey Ya","key":"(G)","lines":[[["t","1\t6\t5\t4  "],["o","x 2"]],[["t","1\t4\t6\t4"]],[["w","1\t4\t1\t1"],["o","-b7-6-5"]],[["o","4\t2\t5\t1"]]]},{"title":"How Sweet","key":"(G)","lines":[[["o","4\t2\t5\t1"]],[["t","1\t6\t5\t4  "],["o","x 2"]],[["t","1\t4\t6\t4"]],[["t","1\t4\t1\t"],["o","1-b7-6-5"]]]},{"title":"Dumb Things","key":"(C)","lines":[[["t","6\t3 - 5  "],["o","6 - 1 - 5 - 2"]],[["w","4\t1\t3\t4 - 5 "]],[["w","6 - 3 - 5 - 1 - 5 - 2 "]]]},{"title":"Drift Away","key":"(?)","lines":[[["t","5\t1  x 3"]],[["t","2\t5"]],[["w","1\t5\t4\t4"]]]},{"title":"Feel it Still","key":"(E)","lines":[[["t","6\t1\t2\t1"]],[["w","4\t2\t6\t6"]]]},{"title":"Grapevine","key":"(Am)","lines":[[["t","1\t1\t5\t4  "],["o","x 2"]],[["t","6\t4\t1\t4"]],[["w","1\t4\t1\t4"]]]},{"title":"Honkey Tonk","key":"(G)","lines":[[["t","1\t1\t4\t4\t"]],[["t","1\t2\t5\t5"]],[["t","1\t1\t4\t4\t"]],[["t","1\t5\t1\t1"]],[["w","1\t5\t1\t1"]]]},{"title":"Horses","key":"(G)","lines":[[["t","1\t5\t6\t4"]],[["t","4 - 5\t4 - 5"]],[["o","(Key: C)"],["t"," "],["w","4\t5\t2\tb7\t"]]]},{"title":"I’m Yours","key":"(A)","lines":[[["t","1\t5\t6\t4"]],[["o","“I’m Yours…” "],["t","2"]]]},{"title":"Island Sun","key":"(G)","lines":[[["t","6\t2\t5\t1"]],[["w","5\t1\t5\t1"]],[["w","4\t2\t5"]]]},{"title":"Kiss","key":"(A)","lines":[[["t","1\t1\t4\t1"]],[["w","5\t4\t5\t4 "],["t"," "],["o","(pause)"]]]},{"title":"La Bamba","key":"(C)","lines":[[["t","1\t5\t4\t(5)"]]]},{"title":"Levitating","key":"(A)","lines":[[["t","6\t3\t2\t2"]]]},{"title":"Lover","key":"(G)","lines":[[["t","1\t4\t"]]]},{"title":"Like a Woman","key":"(E)","lines":[[["t","1\t1\t1\t4 - 1"]],[["t","b7\t1"]],[["w","5"],["t"," "],["o","(hold)"],["t"," "],["w","3\t1  "],["o","end on"],["w"," 6"]],[["o","2\t4\t1\t1"]]]},{"title":"Listen to Music","key":"(A)","lines":[[["t","1\t1\t6 - 5 - 4"]],[["w","6\t4  x 3 "],["o","end on"],["w"," 2-4"]],[["o","Cut out for bridge"]]]},{"title":"Mr Jones","key":"(A)","lines":[[["t","6\t4\t2\t5"]],[["t","6\t4\t5\t5"]],[["w","1\t4\t5\t5"],["t","\t"]],[["o","6\t4\t6\t5"]]]},{"title":"No Diggity","key":"(G)","lines":[[["t","6\t2\t4\t3"]]]},{"title":"Obla Di","key":"(F)","lines":[[["t","1\t5\t5\t1"]],[["t","1\t4\t1 - 5 - 1"]],[["w","1\t5 - 6   1 - 5 - 1"]],[["o","4\t4\t4\t1"]],[["o","4\t4\t1\t5"]]]},{"title":"Only Wanna Be","key":"(F#)","lines":[[["t","1/4\t1/4"]],[["w","2\t4\t1/4\t1/4"]],[["w","2\t5\t1/4\t1/4"],["t","\t"]]]},{"title":"Part Time","key":"(A)","lines":[[["t","2\t6\t5\t5"]],[["w","2\t6\t4\t1\t"],["o","5"]],[["o","Chorus walks on a "],["w","B"]],[["w","2\t4\t1\t1"]]]},{"title":"Perfect","key":"(E)","lines":[[["t","1\t6\t4\t5  "],["o","x 2"]],[["t","1\t6\t4\t1 - 5"]],[["t","1\t6\t4\t5"]],[["w","6\t4\t1\t5"]],[["o","1 - 7 - 6 - 5 - 4 - 5 (TO)"]]]},{"title":"Proud Mary","key":"(B)","lines":[[["o","b7 - 5 - b7 - 5"]],[["o","b7 - 5 - 4 - b3 - 1"]],[["t","1\t1\t5\t6"]]]},{"title":"Save Tonight","key":"(F)","lines":[[["t","6\t4\t1\t5"]]]},{"title":"Scar","key":"(E)","lines":[[["t","1\t5\t6\t4  "],["o","x 4"]],[["t","2\t4 - 5  "],["o","x 2"],["t","\t"]],[["w","1\t5\t6\t4"]]]},{"title":"Scar Tissue","key":"(F)","lines":[[["t","1\t5\t1\t5"]],[["w","6\t6\t5\t6"]]]},{"title":"Shape of You","key":"(F# / Bm)","lines":[[["t","6\t2\t4\t5"]]]},{"title":"Shotgun","key":"(F)","lines":[[["t","1\t4\t6\t5"]]]},{"title":"Shut Up","key":"(A)","lines":[[["w","4\t5\t6\t5"]],[["w","4\t5\t1\t5"]],[["o","3\t4\t6\t5"]],[["o","3\t4\t5\t5"]],[["t","1\t4\t6\t5"]]]},{"title":"Preacher Man","key":"(A)","lines":[[["t","1\t1\t4\t1"]],[["t","5\t"],["o","(hold)"]],[["w","1\t4 - 1\t1\t4 - 1"]],[["w","1\t5\t4"]],[["o","b7\t4\t5\t1"]],[["o","Key Change = Chorus in D"]]]},{"title":"Stacey’s Mom","key":"(C)","lines":[[["t","1\t4\t5\t4"]],[["t","3\t4\t3\t4"]],[["w","4\t1\t5\t6  "],["o","x 2"]],[["w","4\t1\t"],["o","#5"],["w","\t6"]],[["o","3 Step Key Change to "],["w","Eb"],["o"," (WTF!)"]],[["w","4\t1\t5\t6 "]],[["w","4\t1\t3\t3"]]]},{"title":"Stand By Me","key":"(F)","lines":[[["t","1\t6\t4\t5"]]]},{"title":"Steal My Kisses","key":"(G)","lines":[[["t","1\t4\t5\t1"]]]},{"title":"Stuck Middle","key":"(D)","lines":[[["t","1\t1\t4\t1"]],[["w","5\tb7\t4\t1"],["t"," "],["o","(riff)"]],[["t","4\t"],["o","(hold)"],["t","\t1 "],["o","(riff)"]]]},{"title":"Sweet Caroline","key":"(C)","lines":[[["t","5\t"],["o","(intro hold)"]],[["t","1\t4\t1\t5\t"]],[["w","1\t1\t5\t4\t5"]],[["t","1\t4\t4\t5  "],["o"," (x2)"]],[["t","4 - 3 - 2 "],["o","(walk down)"],["t","\t"]]]},{"title":"Alabama","key":"(G)","lines":[[["t","5\t4\t1\t1"]],[["o","V3 has a"],["t"," b7 - 4"]]]},{"title":"Country Roads","key":"(G)","lines":[[["t","1\t6\t5\t4"]],[["w","1\t5\t6\t4"]],[["o","6\t5\t1\t1"]],[["o","4\t1\t5\t5"]],[["o","6\tb7\t4\t1\t5"]]]},{"title":"The Joker","key":"(E)","lines":[[["t","1\t4\t5\t4"]]]},{"title":"River Dreams","key":"(E)","lines":[[["t","1\t1\t4\t5"]],[["w","6 - 5 - 4 - 3 "]],[["w","6 - 5 - 2 - 5"]]]},{"title":"So Easy","key":"(Eb)","lines":[[["t","4\t4\t1\tb2"]],[["w","2 - 5 - 6 - 6 x 3"]],[["w","2 - 5 - 6 - b5 x 3"]]]},{"title":"The Way Feel","key":"(A)","lines":[[["t","1\t1\t1\t1"]],[["t","4\t4\t4\t5"]]]},{"title":"The Weight","key":"(G)","lines":[[["t","1\t3\t4\t1"]],[["w","1\t5/7\t4"]],[["o","1 - 7 - 6 - 5 - 4 (TO)"]]]},{"title":"Thinking Loud","key":"(A)","lines":[[["t","1\t3\t4\t5"]],[["w","2\t5 - 1\t2\t5"]],[["w","2\t5 - 6\t2\t5"]],[["o","6 - 5 - 4 - 3 - 2 - 5 - 1 TO"]]]},{"title":"Tip of Tongue","key":"(E)","lines":[[["t","5\t4\t3\t4"]]]},{"title":"Too Sweet","key":"(G)","lines":[[["t","6\t 7/1    2    3/4 "]],[["t","5 "],["o","(1)"],["t","   3 "],["o","(7)"]],[["w","6\t7\t1\t2\t  "]],[["w","3\t4\t1"],["t"," "],["o","(5)"],["t"," "],["w","3"],["t"," "],["o","(3)"]]]},{"title":"Twist & Shout","key":"(C)","lines":[[["t","1\t4\t5\t5"]],[["o","Ahhh… "],["t","5"]]]},{"title":"Valerie","key":"(C)","lines":[[["t","1\t2\t1\t2"]],[["w","4\t3\t4\t5"]]]},{"title":"Wagon Wheel","key":"(A)","lines":[[["t","1\t5\t6\t4"]],[["t","1\t5\t4\t4"]]]},{"title":"Walk of Life","key":"(E)","lines":[[["o","1\t4\t5\t4"]],[["t","1\t1\t4\t1\t4\t1"]],[["w","1\t5\t1\t4"]],[["w","1\t5\t4\t5"]]]},{"title":"Walking Sunshine","key":"(D)","lines":[[["t","1\t4\t5\t4"]],[["w","5\t4\t5\t4"]]]},{"title":"Watermelon Sug","key":"(C)","lines":[[["t","2\t6\t1\t4"]]]},{"title":"Wonderful World","key":"(A)","lines":[[["t","1\t6\t4\t5"]],[["w","1\t4\t1\t4\t5\t1"]],[["o","5\t1\t5\t1\t"]],[["o","2\t1\t2\t5"],["t","\t"]]]},{"title":"What I Like","key":"(C)","lines":[[["t","1\t4\tb7\t4"]]]},{"title":"Wonderballs","key":"(A)","lines":[[["t","6\t1\t5\t2"]],[["w","4\t5\t6\t6  "],["o","x 2"]],[["w","4\t5\t6 - 5 - 1 - 5 - 2"]],[["o","4\t6\t1\t6"]]]},{"title":"YMCA","key":"(F)","lines":[[["t","1\t6\t4\t"],["o","5-4-5-4-1-4"]],[["t","1\t6\t4\t"],["o","5-4-3-2-1-4"]],[["w","1\t6\t2\t4"]]]},{"title":"You May Be Right","key":"(A)","lines":[[["t","1\t1\t1\t6  "],["o","x 2"]],[["t","2\tb7\t5\t1"]],[["w","5 "],["o","(riff)"],["w","\t1 "],["o","(riff)"]],[["w","5\t4\t6\t1"]],[["w","5 "],["o","(riff)"],["w","\t1 "],["o","(riff)"]],[["w","4\t5\t1\t1"]]]}];
 const ALIAS = {"Diamonds Souls": "Diamonds on the Soles of Her Shoes Paul Simon", "Watermelon Sug": "Watermelon Sugar Harry Styles", "Shut Up": "Shut Up and Dance Walk the Moon", "Only Wanna Be": "I Only Wanna Be With You", "Stuck Middle": "Stuck in the Middle With You Stealers Wheel", "Thinking Loud": "Thinking Out Loud Ed Sheeran", "Tip of Tongue": "Tip of My Tongue", "The Way Feel": "The Way You Make Me Feel", "Dumb Things": "Dumb Things Paul Kelly", "Obla Di": "Ob-La-Di Ob-La-Da Beatles", "Honkey Tonk": "Honky Tonk Women Rolling Stones", "Part Time": "Part Time Lover Stevie Wonder", "Walking Sunshine": "Walking on Sunshine Katrina", "Grapevine": "I Heard It Through the Grapevine Marvin Gaye", "Steal My Kisses": "Ben Harper", "Country Roads": "Take Me Home Country Roads John Denver", "Mr Jones": "Counting Crows", "Island Sun": "Island in the Sun Weezer", "Horses": "Daryl Braithwaite", "Wonderful World": "What a Wonderful World", "Crocodile": "Crocodile Rock Elton John", "Moonlight": "Moonlight Shadow Mike Oldfield", "Walk of Life": "Dire Straits", "Wagon Wheel": "Old Crow Medicine Show Darius Rucker", "Proud Mary": "Creedence Clearwater Revival", "Down Under": "Men at Work", "Levitating": "Dua Lipa", "Perfect": "Ed Sheeran", "Shape of You": "Ed Sheeran", "Happy": "Pharrell Williams"};
-const norm = s => s.toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9#/ ]+/g,' ').replace(/\s+/g,' ').trim();
+const COLS=['t','w','o'],CNAME={t:'teal',w:'white',o:'orange'};
+const norm = s => String(s||'').toLowerCase().replace(/[’']/g,'').replace(/[^a-z0-9#/ ]+/g,' ').replace(/\s+/g,' ').trim();
 const sortKey = t => norm(t).replace(/^the /,'');
-SONGS.forEach((s,i)=>{s.id=i; s.hay=norm(s.title+' '+s.key+' '+(ALIAS[s.title]||''));});
-const ORDER = SONGS.map(s=>s.id).sort((a,b)=>sortKey(SONGS[a].title).localeCompare(sortKey(SONGS[b].title)) || a-b);
-
-let store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let inSet=new Set(); try{inSet=new Set(JSON.parse(store.get('set')||'[]').filter(i=>SONGS[i]))}catch(e){}
-let size=parseFloat(store.get('size'))||2.6; document.documentElement.style.setProperty('--chart',size+'rem');
-let mode='all', sel=null, q='';
-
 const $=id=>document.getElementById(id);
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e};
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}};
+const storeOK=store.set('_t','1');
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+
+let songs=[],meta={backedUp:null,changes:0},inSet=new Set(),mode='all',q='',sel=null,pane='chart',draft=null;
+let size=parseFloat(store.get('size'))||2.6;document.documentElement.style.setProperty('--chart',size+'rem');
+
+const uid=()=>'n'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const clone=o=>JSON.parse(JSON.stringify(o));
+function baseCopy(){return BASE.map((s,i)=>({id:'b'+i,title:s.title,key:s.key,alias:ALIAS[s.title]||'',lines:clone(s.lines)}))}
+function clean(s){ // returns a safe song or null
+  if(!s||typeof s.title!=='string'||!Array.isArray(s.lines))return null;
+  const lines=s.lines.map(l=>Array.isArray(l)?l.filter(p=>Array.isArray(p)&&typeof p[1]==='string').map(p=>[COLS.includes(p[0])?p[0]:'w',p[1]]):[]).filter(l=>l.length);
+  return{id:typeof s.id==='string'&&/^[a-z0-9]+$/.test(s.id)?s.id:uid(),title:s.title.trim(),key:String(s.key||'').trim(),alias:String(s.alias||''),lines};
+}
+function load(){
+  const raw=store.get('songs2');let ok=false;
+  if(raw!==null){try{const j=JSON.parse(raw);if(Array.isArray(j)){songs=j.map(clean).filter(Boolean);ok=true}}catch(e){}}
+  if(!ok)songs=baseCopy();
+  try{Object.assign(meta,JSON.parse(store.get('meta2')||'{}'))}catch(e){}
+  try{inSet=new Set(JSON.parse(store.get('set2')||'[]'))}catch(e){}
+  inSet=new Set([...inSet].filter(id=>get(id)));
+}
+const get=id=>songs.find(s=>s.id===id);
+function persist(){store.set('songs2',JSON.stringify(songs));store.set('meta2',JSON.stringify(meta))}
+function changed(){meta.changes=(meta.changes||0)+1;persist()}
+function saveSet(){store.set('set2',JSON.stringify([...inSet]))}
 
 function visible(){
   const terms=norm(q).split(' ').filter(Boolean);
-  return ORDER.filter(i=>(mode==='all'||inSet.has(i)) && terms.every(t=>SONGS[i].hay.includes(t)));
+  return songs.filter(s=>(mode==='all'||inSet.has(s.id))&&terms.every(t=>norm(s.title+' '+s.key+' '+s.alias).includes(t)))
+    .sort((a,b)=>sortKey(a.title).localeCompare(sortKey(b.title)));
 }
-function saveSet(){store.set('set',JSON.stringify([...inSet]))}
-function toggle(i){inSet.has(i)?inSet.delete(i):inSet.add(i);saveSet();renderList();if(sel===i)renderChart()}
+function toggle(id){inSet.has(id)?inSet.delete(id):inSet.add(id);saveSet();renderList();if(pane==='chart'&&sel===id)renderChart()}
 
 function renderList(){
   const box=$('list'),keep=box.scrollTop;box.textContent='';
-  const ids=visible();
-  $('n-all').textContent=SONGS.length;$('n-set').textContent=inSet.size||'';
-  if(!ids.length){box.append(el('div','empty',mode==='set'&&!inSet.size?'No songs in the set yet. Open a song and tap Add to set.':'No songs match.'));return}
-  for(const i of ids){
-    const s=SONGS[i],row=el('div','row'+(i===sel?' sel':''));
-    const open=el('button','open');open.type='button';
-    open.append(el('span','t',s.title),el('span','k',s.key));
-    open.onclick=()=>show(i);
-    const st=el('button','star',inSet.has(i)?'In set':'Add');st.type='button';
-    st.setAttribute('aria-pressed',inSet.has(i));st.setAttribute('aria-label',(inSet.has(i)?'Remove ':'Add ')+s.title+(inSet.has(i)?' from set':' to set'));
-    st.onclick=()=>toggle(i);
+  $('n-all').textContent=songs.length;$('n-set').textContent=inSet.size||'';
+  $('b-bak').textContent='Backup';if(meta.changes>0){const d=el('span','dot',' •'+meta.changes);$('b-bak').append(d)}
+  const list=visible();
+  if(!list.length){box.append(el('div','empty',mode==='set'&&!inSet.size?'No songs in the set yet. Open a song and tap Add to set.':'No songs match.'));return}
+  for(const s of list){
+    const row=el('div','row'+(s.id===sel&&pane!=='backup'?' sel':''));
+    const open=el('button','open');open.type='button';open.append(el('span','t',s.title),el('span','k',s.key));
+    open.onclick=()=>{location.hash='s-'+s.id};
+    const st=el('button','star',inSet.has(s.id)?'In set':'Add');st.type='button';
+    st.setAttribute('aria-pressed',inSet.has(s.id));st.setAttribute('aria-label',(inSet.has(s.id)?'Remove ':'Add ')+s.title+(inSet.has(s.id)?' from set':' to set'));
+    st.onclick=()=>toggle(s.id);
     row.append(open,st);box.append(row);
   }
   box.scrollTop=keep;
 }
 
-function renderChart(){
-  const box=$('chart');box.textContent='';
-  const bar=el('div','bar');
-  const back=el('button','back','‹ Songs');back.type='button';back.onclick=()=>{location.hash='';};
-  bar.append(back,el('span','sp'));
-  const mk=(t,f)=>{const b=el('button','sm',t);b.type='button';b.onclick=f;return b};
-  const sm=mk('A−',()=>resize(-0.2)),lg=mk('A+',()=>resize(0.2));sm.setAttribute('aria-label','Smaller text');lg.setAttribute('aria-label','Larger text');
-  if(sel==null){box.append(bar,el('div','hint','Pick a song from the list.'));return}
-  const s=SONGS[sel];
-  const add=mk(inSet.has(sel)?'In set':'Add to set',()=>toggle(sel));add.setAttribute('aria-pressed',inSet.has(sel));
-  bar.append(sm,lg,add);
-  const head=el('div','head');head.append(el('span','t',s.title+' '),document.createTextNode(s.key));
-  box.append(bar,head);
-  for(const ln of s.lines){
+function renderLines(box,lines){
+  for(const ln of lines){
     const d=el('div','line');
     for(const [c,t] of ln){
       const sp=el('span','c-'+c);
@@ -152,22 +186,144 @@ function renderChart(){
     }
     box.append(d);
   }
-  box.scrollTop=0;
 }
+const mk=(t,f,cls)=>{const b=el('button',cls||'sm',t);b.type='button';b.onclick=f;return b};
 function resize(d){size=Math.min(5,Math.max(1.2,+(size+d).toFixed(2)));document.documentElement.style.setProperty('--chart',size+'rem');store.set('size',size)}
+function backBar(box,label,target){
+  const bar=el('div','bar');const back=mk('‹ '+label,()=>{location.hash=target},'back');bar.append(back,el('span','sp'));box.append(bar);return bar;
+}
 
-function show(i){location.hash='s-'+i}
+function renderChart(){
+  const box=$('chart');box.textContent='';
+  const s=sel&&get(sel);
+  if(!s){backBar(box,'Songs','');box.append(el('div','hint','Pick a song from the list, or tap New to add one.'));return}
+  const bar=backBar(box,'Songs','');
+  const a=mk('A−',()=>resize(-0.2)),b=mk('A+',()=>resize(0.2));a.setAttribute('aria-label','Smaller text');b.setAttribute('aria-label','Larger text');
+  const add=mk(inSet.has(s.id)?'In set':'Add to set',()=>toggle(s.id));add.setAttribute('aria-pressed',inSet.has(s.id));
+  bar.append(a,b,mk('Edit',()=>{location.hash='edit-'+s.id}),add);
+  const head=el('div','head');head.append(el('span','t',s.title+' '),document.createTextNode(s.key));
+  box.append(head);renderLines(box,s.lines);box.scrollTop=0;
+}
+
+/* ---------- editor ---------- */
+const showText=t=>t.replace(/\t/g,' | ');
+const readText=v=>v.split(/\s*\|\s*/).join('\t');
+function renderEditor(){
+  const box=$('chart');box.textContent='';
+  const isNew=!get(draft.id);
+  backBar(box,isNew?'Cancel':'Cancel',isNew?'':'s-'+draft.id);
+  const p=el('div','panel');
+  p.append(el('h2',null,isNew?'New song':'Edit song'));
+  const f=(label,val,ph,key)=>{const w=el('div','field');const l=el('label',null,label);const i=el('input','in');i.type='text';i.value=val;i.placeholder=ph||'';i.id='f-'+key;l.htmlFor=i.id;
+    i.autocapitalize='off';i.autocomplete='off';i.spellcheck=false;i.oninput=()=>{draft[key]=i.value;renderPreview()};w.append(l,i);return w};
+  p.append(f('Title',draft.title,'e.g. Wagon Wheel','title'),f('Key',draft.key,'e.g. A','key'),f('Also search for (artist, full title)',draft.alias,'optional','alias'));
+  const lab=el('div','field');lab.append(el('label',null,'Chart lines. Type a | between chords for a gap. Tap the circle to change colour.'));p.append(lab);
+  draft.lines.forEach((ln,li)=>{
+    const L=el('div','eline');
+    ln.forEach((seg,si)=>{
+      const r=el('div','seg-row');
+      const sw=el('button','sw '+seg[0]);sw.type='button';sw.setAttribute('aria-label','Colour '+CNAME[seg[0]]+'. Tap to change.');
+      sw.onclick=()=>{seg[0]=COLS[(COLS.indexOf(seg[0])+1)%3];renderEditor()};
+      const i=el('input','in');i.type='text';i.value=showText(seg[1]);i.autocapitalize='off';i.autocomplete='off';i.spellcheck=false;i.setAttribute('aria-label','Line '+(li+1)+' part '+(si+1));
+      i.oninput=()=>{seg[1]=readText(i.value);renderPreview()};
+      r.append(sw,i);
+      if(ln.length>1){const x=mk('✕',()=>{ln.splice(si,1);renderEditor()});x.setAttribute('aria-label','Remove this part');r.append(x)}
+      L.append(r);
+    });
+    const tl=el('div','tools');
+    tl.append(mk('+ part',()=>{ln.push([ln[ln.length-1][0],''],);renderEditor()}));
+    if(li>0)tl.append(mk('↑',()=>{[draft.lines[li-1],draft.lines[li]]=[draft.lines[li],draft.lines[li-1]];renderEditor()}));
+    if(li<draft.lines.length-1)tl.append(mk('↓',()=>{[draft.lines[li+1],draft.lines[li]]=[draft.lines[li],draft.lines[li+1]];renderEditor()}));
+    tl.append(mk('Delete line',()=>{draft.lines.splice(li,1);if(!draft.lines.length)draft.lines.push([['t','']]);renderEditor()}));
+    L.append(tl);p.append(L);
+  });
+  p.append(mk('+ Add line',()=>{const last=draft.lines[draft.lines.length-1];draft.lines.push([[last?last[last.length-1][0]:'t','']]);renderEditor()}));
+  const msg=el('div','msg warn');msg.id='emsg';
+  const act=el('div','tools');
+  act.append(mk('Save',saveDraft,'sm primary'));
+  act.append(mk('Cancel',()=>{location.hash=isNew?'':'s-'+draft.id}));
+  if(!isNew)act.append(confirmBtn('Delete song','Tap again to delete',()=>{songs=songs.filter(s=>s.id!==draft.id);inSet.delete(draft.id);saveSet();changed();location.hash=''}));
+  p.append(msg,act);
+  const pv=el('div','pv');pv.id='pv';p.append(el('p',null,'Preview'),pv);
+  box.append(p);renderPreview();box.scrollTop=0;
+}
+function renderPreview(){
+  const pv=$('pv');if(!pv)return;pv.textContent='';
+  const h=el('div','head');h.append(el('span','t',(draft.title||'Untitled')+' '),document.createTextNode(normKey(draft.key)));pv.append(h);
+  renderLines(pv,tidy(draft.lines));
+}
+const normKey=k=>{k=(k||'').trim();return k&&!k.startsWith('(')?'('+k+')':k};
+const tidy=lines=>lines.map(l=>l.filter(s=>s[1]!=='')).filter(l=>l.length);
+function saveDraft(){
+  const m=$('emsg');
+  if(!draft.title.trim()){m.textContent='Add a title first.';return}
+  const s={id:draft.id,title:draft.title.trim(),key:normKey(draft.key),alias:draft.alias.trim(),lines:tidy(draft.lines)};
+  if(!s.lines.length){m.textContent='Add at least one chart line.';return}
+  const i=songs.findIndex(x=>x.id===s.id);if(i>=0)songs[i]=s;else songs.push(s);
+  changed();location.hash='s-'+s.id;
+}
+function confirmBtn(label,armed,fn){
+  const b=el('button','sm danger',label);b.type='button';let t;
+  b.onclick=()=>{if(b.dataset.armed){clearTimeout(t);fn()}else{b.dataset.armed='1';b.textContent=armed;t=setTimeout(()=>{delete b.dataset.armed;b.textContent=label},4000)}};
+  return b;
+}
+
+/* ---------- backup ---------- */
+async function copyText(ta){
+  try{await navigator.clipboard.writeText(ta.value);return true}catch(e){}
+  ta.focus();ta.select();try{return document.execCommand('copy')}catch(e){return false}
+}
+function renderBackup(){
+  const box=$('chart');box.textContent='';backBar(box,'Songs','');
+  const p=el('div','panel');p.append(el('h2',null,'Backup'));
+  if(!storeOK)p.append(el('p','warn','This view can’t save changes. Edits will be lost when you close it.'));
+  const when=meta.backedUp?new Date(meta.backedUp).toLocaleString():'never';
+  p.append(el('p',null,songs.length+' songs. Changes since last backup: '+(meta.changes||0)+'. Last backup: '+when+'.'));
+  p.append(el('p',null,'Your songs live in this browser only. Copy the backup below and paste it somewhere you keep, such as Notes. If the browser data is ever cleared, paste it back into Restore.'));
+  const ta=el('textarea','in');ta.readOnly=true;ta.setAttribute('aria-label','Backup text');ta.value=JSON.stringify({app:'cover-chart-finder',version:2,songs});
+  const m1=el('div','msg');
+  const act=el('div','tools');
+  act.append(mk('Copy backup',async()=>{
+    if(await copyText(ta)){meta.backedUp=Date.now();meta.changes=0;persist();renderList();m1.textContent='Copied. Paste it into Notes or a file.';m1.className='msg'}
+    else{m1.textContent='Couldn’t copy automatically. The text is selected: copy it by hand.';m1.className='msg warn'}
+  },'sm primary'));
+  p.append(ta,act,m1);
+  p.append(el('h2',null,'Restore'));
+  p.append(el('p',null,'Paste a backup here. Merge adds songs you don’t already have. Replace swaps your whole list.'));
+  const ti=el('textarea','in');ti.placeholder='Paste backup text';ti.setAttribute('aria-label','Paste backup text');
+  const m2=el('div','msg');
+  const parse=()=>{try{let j=JSON.parse(ti.value);if(j&&!Array.isArray(j))j=j.songs;if(!Array.isArray(j))throw 0;const out=j.map(clean).filter(Boolean);if(!out.length)throw 0;return out}catch(e){m2.textContent='That isn’t a valid backup.';m2.className='msg warn';return null}};
+  const a2=el('div','tools');
+  a2.append(mk('Merge',()=>{const inc=parse();if(!inc)return;let add=0,skip=0;
+      for(const s of inc){if(songs.some(x=>norm(x.title)===norm(s.title)&&norm(x.key)===norm(s.key))){skip++;continue}
+        if(get(s.id))s.id=uid();songs.push(s);add++}
+      if(add)changed();renderList();m2.className='msg';m2.textContent='Added '+add+', skipped '+skip+' already here.'}));
+  a2.append(confirmBtn('Replace all','Tap again to replace',()=>{const inc=parse();if(!inc)return;songs=inc;inSet=new Set([...inSet].filter(id=>get(id)));saveSet();changed();renderList();m2.className='msg';m2.textContent='Replaced. '+songs.length+' songs.'}));
+  p.append(ti,a2,m2);
+  p.append(el('h2',null,'Start over'));
+  p.append(el('p',null,'Go back to the original 70 songs from your Pages sheet. This discards your edits.'));
+  const m3=el('div','msg');
+  p.append(confirmBtn('Reset to original songs','Tap again to reset',()=>{songs=baseCopy();inSet=new Set();saveSet();changed();renderList();m3.textContent='Reset.'}),m3);
+  box.append(p);box.scrollTop=0;
+}
+
+/* ---------- routing ---------- */
 function route(){
-  const m=/^#s-(\d+)$/.exec(location.hash);
-  sel=m&&SONGS[+m[1]]?+m[1]:null;
-  document.body.dataset.view=sel==null?'list':'chart';
-  renderList();renderChart();
+  const h=location.hash;let m;sel=null;pane='chart';
+  if((m=/^#s-([a-z0-9]+)$/.exec(h))&&get(m[1]))sel=m[1];
+  else if((m=/^#edit-([a-z0-9]+)$/.exec(h))&&get(m[1])){sel=m[1];pane='edit';draft=clone(get(m[1]));draft.lines=clone(draft.lines)}
+  else if(h==='#new'){pane='edit';draft={id:uid(),title:'',key:'',alias:'',lines:[[['t','']]]}}
+  else if(h==='#backup')pane='backup';
+  document.body.dataset.view=(pane==='chart'&&!sel)?'list':'chart';
+  renderList();
+  if(pane==='edit')renderEditor();else if(pane==='backup')renderBackup();else renderChart();
 }
 function setMode(m){mode=m;$('m-all').setAttribute('aria-pressed',m==='all');$('m-set').setAttribute('aria-pressed',m==='set');renderList()}
 $('q').addEventListener('input',e=>{q=e.target.value;renderList()});
 $('m-all').onclick=()=>setMode('all');$('m-set').onclick=()=>setMode('set');
+$('b-new').onclick=()=>{location.hash='new'};$('b-bak').onclick=()=>{location.hash='backup'};
 addEventListener('hashchange',route);
-route();
+load();route();
 </script>
 <script>
 if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
