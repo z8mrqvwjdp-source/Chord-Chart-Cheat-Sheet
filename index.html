@@ -185,6 +185,18 @@ header{background:var(--panel);border:1px solid var(--line);border-radius:16px;p
 .card .ctl .spot{margin-left:auto;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:#1db954;color:#07130b;font-weight:700;border:1px solid #1db954;border-radius:10px;padding:10px 18px;font:inherit;font-weight:700}
 .card .ctl button.sm.spot{background:#1db954;border-color:#1db954;color:#07130b}
 @media (max-width:820px){.card .ctl button.sm,.card .ctl .spot{padding:10px 12px;font-size:.9rem}}
+
+/* ---- v12: Spotify remote player in the banner ---- */
+.banner:has(.pl > *){padding-block:10px}
+.pl .pc{display:flex;flex-direction:column;gap:4px;width:100%}
+.pl .prow{display:flex;align-items:center;gap:8px}
+.pl .pb{background:rgba(255,255,255,.08);border:1px solid #4d4a86;color:var(--white);border-radius:10px;font:inherit;font-weight:500;padding:8px 12px;min-width:48px}
+.pl .pb.main{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700;min-width:72px}
+.pl .ptime{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.95rem;white-space:nowrap}
+.pl .prange{width:100%;accent-color:var(--blue);height:26px;margin:0}
+.pl .pnote{font-size:.8rem;color:var(--orange);line-height:1.1}
+.pl .pnote:empty{display:none}
+.pl .pcon{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.95rem}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 [hidden]{display:none!important}
 </style>
@@ -255,7 +267,8 @@ function visible(){
   return songs.filter(s=>(mode==='all'||inSet.has(s.id))&&terms.every(t=>norm(s.title+' '+s.key+' '+s.alias).includes(t)))
     .sort((a,b)=>sortKey(a.title).localeCompare(sortKey(b.title)));
 }
-function toggle(id){inSet.has(id)?inSet.delete(id):inSet.add(id);saveSet();renderList();if(pane==='chart'&&sel===id)renderChart()}
+function toggle(id){inSet.has(id)?inSet.delete(id):inSet.add(id);saveSet();renderList();
+  const ab=document.querySelector('#chart .addset');if(ab&&sel===id){ab.setAttribute('aria-pressed',inSet.has(id));ab.textContent=inSet.has(id)?'In set':'Add to set'}}
 
 function renderList(){
   const box=$('list'),keep=box.scrollTop;box.textContent='';
@@ -298,7 +311,7 @@ function renderChart(){
   if(!s){backBar(box,'Songs','');box.append(el('div','hint','Pick a song from the list, or tap New to add one.'));return}
   const bar=backBar(box,'Songs','');
   const a=mk('A−',()=>resize(-0.2)),b=mk('A+',()=>resize(0.2));a.setAttribute('aria-label','Smaller text');b.setAttribute('aria-label','Larger text');
-  const add=mk(inSet.has(s.id)?'In set':'Add to set',()=>toggle(s.id));add.setAttribute('aria-pressed',inSet.has(s.id));
+  const add=mk(inSet.has(s.id)?'In set':'Add to set',()=>toggle(s.id),'sm addset');add.setAttribute('aria-pressed',inSet.has(s.id));
   const slot=el('div','pl');const ctl=el('div','bar ctl');ctl.append(a,b,mk('Edit',()=>{location.hash='edit-'+s.id},'sm edit'),add);
   ctl.append(spotifyControl(s,slot));const card=el('div','card');card.append(banner(s.title,s.key,slot),ctl);box.append(card);renderLines(box,s.lines);box.scrollTop=0;
 }
@@ -306,15 +319,134 @@ function renderChart(){
 function spotifyControl(s,slot){
   if(EMBED&&s.spotify){
     const b=mk('Play',()=>{
-      if(slot.firstChild){slot.textContent='';b.textContent='Play'}
+      if(slot.firstChild){spStop();slot.textContent='';b.textContent='Play';return}
+      b.textContent='Hide';
+      if(spClient()&&spTok())spPlayer(s,slot);
+      else if(spClient())spConnectPrompt(slot);
       else{const f=document.createElement('iframe');f.src='https://open.spotify.com/embed/track/'+s.spotify+'?utm_source=generator&theme=0';
         f.height='80';f.style.width='100%';f.style.border='0';f.style.borderRadius='12px';f.loading='lazy';f.title='Spotify player: '+s.title;
-        f.setAttribute('allow','autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');slot.append(f);b.textContent='Hide'}
+        f.setAttribute('allow','autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture');slot.append(f)}
     },'sm spot');
     return b;
   }
   const a=el('a','spot','Spotify ↗');a.href=spLink(s);a.target='_blank';a.rel='noopener';
   a.setAttribute('aria-label','Open '+s.title+(s.spotify?' on Spotify':' search on Spotify'));return a;
+}
+/* ---------- Spotify: sign in once, then control the Spotify app (hosted build only) ---------- */
+const SPK='sp_client',SPT='sp_tok';let spMsg='',spTimers=[];
+const spRedirect=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+const spClient=()=>(store.get(SPK)||'').trim();
+const spTok=()=>{try{return JSON.parse(store.get(SPT)||'null')}catch(e){return null}};
+const b64u=buf=>btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+async function spConnect(){
+  const verifier=b64u(crypto.getRandomValues(new Uint8Array(32)));
+  const challenge=b64u(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(verifier)));
+  const state=b64u(crypto.getRandomValues(new Uint8Array(12)));
+  store.set('sp_v',verifier+'.'+state);store.set('sp_ret',location.hash||'#backup');
+  location.href='https://accounts.spotify.com/authorize?'+new URLSearchParams({client_id:spClient(),response_type:'code',redirect_uri:spRedirect(),
+    code_challenge_method:'S256',code_challenge:challenge,state,scope:'user-modify-playback-state user-read-playback-state'});
+}
+async function spHandleRedirect(){
+  const u=new URL(location.href),code=u.searchParams.get('code'),st=u.searchParams.get('state'),err=u.searchParams.get('error');
+  if(!code&&!err)return;
+  history.replaceState(null,'',spRedirect()+(store.get('sp_ret')||'#backup'));
+  const [v,s]=(store.get('sp_v')||'.').split('.');store.set('sp_v','');
+  try{
+    if(err||!code||st!==s)throw new Error('cancelled');
+    await spToken({grant_type:'authorization_code',code,redirect_uri:spRedirect(),code_verifier:v});spMsg='';
+  }catch(e){spMsg='Couldn’t connect to Spotify. Check the Client ID and redirect URI, then try again.';history.replaceState(null,'',spRedirect()+'#backup')}
+  route();
+}
+async function spToken(p){
+  const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:spClient(),...p})});
+  if(!r.ok)throw new Error('token '+r.status);
+  const j=await r.json();const old=spTok()||{};
+  store.set(SPT,JSON.stringify({access:j.access_token,refresh:j.refresh_token||old.refresh,exp:Date.now()+(j.expires_in-60)*1000}));
+}
+async function spAccess(){const t=spTok();if(!t)throw new Error('noauth');if(Date.now()<t.exp)return t.access;
+  try{await spToken({grant_type:'refresh_token',refresh_token:t.refresh})}catch(e){throw new Error('401')}return spTok().access}
+async function spApi(method,path,body){
+  const tok=await spAccess();
+  const r=await fetch('https://api.spotify.com/v1'+path,{method,headers:Object.assign({Authorization:'Bearer '+tok},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined});
+  if(r.status===401)throw new Error('401');
+  return r;
+}
+async function spState(){const r=await spApi('GET','/me/player');if(r.status===204)return null;if(!r.ok)throw new Error(String(r.status));return r.json()}
+function spStop(){spTimers.forEach(clearInterval);spTimers=[]}
+const fmtMs=ms=>{ms=Math.max(0,Math.floor(ms/1000));return Math.floor(ms/60)+':'+String(ms%60).padStart(2,'0')};
+function spConnectPrompt(slot){
+  const w=el('div','pcon');w.append(el('span',null,'Connect Spotify to play full tracks.'),mk('Connect',()=>spConnect(),'pb main'));slot.append(w);
+}
+function spPlayer(s,slot){
+  spStop();slot.textContent='';
+  const st={pos:0,dur:0,playing:false,at:Date.now(),drag:false,id:null};
+  const wrap=el('div','pc'),row=el('div','prow'),note=el('div','pnote');
+  const cur=()=>st.playing?Math.min(st.dur||1e9,st.pos+(Date.now()-st.at)):st.pos;
+  const mine=()=>st.id===s.spotify;
+  const pp=mk('Play',()=>toggle(),'pb main'),bk=mk('−10',()=>nudge(-10000),'pb'),fw=mk('+10',()=>nudge(10000),'pb');
+  bk.setAttribute('aria-label','Back 10 seconds');fw.setAttribute('aria-label','Forward 10 seconds');
+  const time=el('span','ptime','–:– / –:–');
+  const rng=el('input','prange');rng.type='range';rng.min=0;rng.max=1000;rng.value=0;rng.setAttribute('aria-label','Seek');
+  row.append(bk,pp,fw,time);wrap.append(row,rng,note);slot.append(wrap);
+  const paint=()=>{
+    pp.textContent=(mine()&&st.playing)?'Pause':'Play';
+    if(!mine()||!st.dur){time.textContent='–:– / –:–';if(!st.drag)rng.value=0;return}
+    const c=cur();time.textContent=fmtMs(c)+' / '+fmtMs(st.dur);if(!st.drag)rng.value=Math.round(c/st.dur*1000);
+  };
+  async function guard(fn){try{await fn()}catch(e){
+    if(e.message==='noauth'||e.message==='401'){store.set(SPT,'');note.textContent='Spotify sign-in expired. Reconnect in Backup.'}
+    else note.textContent='Couldn’t reach Spotify.'}}
+  async function refresh(){
+    const j=await spState();
+    if(!j||!j.item){st.playing=false;st.id=null;paint();return}
+    st.pos=j.progress_ms||0;st.dur=j.item.duration_ms||0;st.playing=!!j.is_playing;st.at=Date.now();st.id=j.item.id;paint();
+    note.textContent=mine()?'':'Spotify is playing a different track.';
+  }
+  async function startTrack(){
+    note.textContent='Starting…';const body={uris:['spotify:track:'+s.spotify]};
+    let r=await spApi('PUT','/me/player/play',body);
+    if(r.status===404){
+      const dr=await spApi('GET','/me/player/devices');const ds=((await dr.json()).devices||[]).filter(x=>!x.is_restricted);
+      const dev=ds.find(x=>x.is_active)||ds.find(x=>/tablet|smartphone/i.test(x.type))||ds[0];
+      if(!dev){note.textContent='Open the Spotify app on this iPad, play anything, then tap Play again.';return}
+      r=await spApi('PUT','/me/player/play?device_id='+encodeURIComponent(dev.id),body);
+    }
+    if(r.status===403){note.textContent='Spotify says playback control needs Premium.';return}
+    if(!r.ok){note.textContent='Spotify couldn’t start that track.';return}
+    note.textContent='';st.id=s.spotify;st.playing=true;st.pos=0;st.at=Date.now();paint();
+    setTimeout(()=>guard(refresh),800);
+  }
+  async function toggle(){await guard(async()=>{
+    if(!mine()){await startTrack();return}
+    const was=st.playing,c=cur();
+    const r=await spApi('PUT',was?'/me/player/pause':'/me/player/play');
+    if(r.ok){st.pos=c;st.at=Date.now();st.playing=!was;paint()}
+  })}
+  async function seekTo(ms){await guard(async()=>{
+    if(!mine())return;const to=Math.max(0,Math.min((st.dur||0)-500,Math.round(ms)));
+    const r=await spApi('PUT','/me/player/seek?position_ms='+to);
+    if(r.ok){st.pos=to;st.at=Date.now();paint()}
+  })}
+  const nudge=ms=>seekTo(cur()+ms);
+  rng.oninput=()=>{st.drag=true;if(st.dur)time.textContent=fmtMs(rng.value/1000*st.dur)+' / '+fmtMs(st.dur)};
+  rng.onchange=()=>{st.drag=false;seekTo(rng.value/1000*st.dur)};
+  spTimers.push(setInterval(paint,250),setInterval(()=>guard(refresh),2000));
+  guard(async()=>{await refresh();if(mine()){if(!st.playing){const r=await spApi('PUT','/me/player/play');if(r.ok){st.at=Date.now();st.playing=true;paint()}}}else await startTrack()});
+}
+function spotifyPanel(p){
+  p.append(el('h2',null,'Spotify'));
+  const connected=!!spTok();
+  p.append(el('p',null,connected?'Connected. The Play button controls the Spotify app on this device.':'Not connected. Until you connect, the player only plays 30-second previews.'));
+  if(spMsg){p.append(el('p','warn',spMsg));spMsg=''}
+  const f=el('div','field'),l=el('label',null,'Spotify Client ID'),i=el('input','in');
+  i.type='text';i.id='sp-client';l.htmlFor='sp-client';i.value=spClient();i.placeholder='Paste your Client ID';i.autocapitalize='off';i.autocomplete='off';i.spellcheck=false;
+  i.oninput=()=>store.set(SPK,i.value.trim());f.append(l,i);p.append(f);
+  const rf=el('div','field');rf.append(el('label',null,'Redirect URI to add in the Spotify dashboard'));
+  const ri=el('input','in');ri.readOnly=true;ri.value=spRedirect();ri.setAttribute('aria-label','Redirect URI');rf.append(ri);p.append(rf);
+  const act=el('div','tools');
+  act.append(mk(connected?'Reconnect':'Connect Spotify',()=>{if(!spClient()){spMsg='Paste your Client ID first.';renderBackup();return}spConnect()},'sm primary'));
+  if(connected)act.append(mk('Disconnect',()=>{store.set(SPT,'');renderBackup()}));
+  p.append(act,el('p',null,'Setup: at developer.spotify.com/dashboard create an app (any name), add the redirect URI above, tick Web API, save, then paste its Client ID here and tap Connect. Playback control needs Spotify Premium, and the Spotify app must be open on this iPad.'));
 }
 /* ---------- editor ---------- */
 const showText=t=>t.replace(/\t/g,' | ');
@@ -414,6 +546,7 @@ function renderBackup(){
       if(add)changed();renderList();m2.className='msg';m2.textContent='Added '+add+', skipped '+skip+' already here.'}));
   a2.append(confirmBtn('Replace all','Tap again to replace',()=>{const inc=parse();if(!inc)return;songs=inc;inSet=new Set([...inSet].filter(id=>get(id)));saveSet();changed();renderList();m2.className='msg';m2.textContent='Replaced. '+songs.length+' songs.'}));
   p.append(ti,a2,m2);
+  if(EMBED)spotifyPanel(p);
   p.append(el('h2',null,'Start over'));
   p.append(el('p',null,'Go back to the built-in list of 83 songs, as of the last time the app files were updated. This discards your edits.'));
   const m3=el('div','msg');
@@ -423,6 +556,7 @@ function renderBackup(){
 
 /* ---------- routing ---------- */
 function route(){
+  spStop();
   const h=location.hash;let m;sel=null;pane='chart';
   if((m=/^#s-([a-z0-9]+)$/.exec(h))&&get(m[1]))sel=m[1];
   else if((m=/^#edit-([a-z0-9]+)$/.exec(h))&&get(m[1])){sel=m[1];pane='edit';draft=clone(get(m[1]));draft.lines=clone(draft.lines)}
@@ -437,7 +571,7 @@ $('q').addEventListener('input',e=>{q=e.target.value;renderList()});
 $('m-all').onclick=()=>setMode('all');$('m-set').onclick=()=>setMode('set');
 $('b-new').onclick=()=>{location.hash='new'};$('b-bak').onclick=()=>{location.hash='backup'};
 addEventListener('hashchange',route);
-load();route();
+load();route();if(EMBED)spHandleRedirect();
 </script>
 <script>
 if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
